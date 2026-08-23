@@ -108,7 +108,7 @@ function renderLanding(): void {
           </div>
           <div id="html-panel" class="input-panel">
             <label class="source-label" for="html-source">مصدر HTML</label>
-            <textarea id="html-source" spellcheck="false" dir="ltr" placeholder="<!doctype html>\n<html lang=\"ar\" dir=\"rtl\">\n  ..."></textarea>
+            <textarea id="html-source" spellcheck="false" dir="ltr" placeholder='<!doctype html>\n<html lang="ar" dir="rtl">\n  ...'></textarea>
             <div class="source-tools">
               <label class="file-select" for="html-file"><input id="html-file" type="file" accept=".html,.htm,text/html" />اختر ملف HTML</label>
               <label class="css-optional" for="css-source">CSS اختياري<textarea id="css-source" dir="ltr" placeholder="ألصق CSS منفصلاً إن وجد"></textarea></label>
