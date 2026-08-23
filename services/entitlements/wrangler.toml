@@ -1,4 +1,4 @@
-name = "kashifweb-entitlements"
+name = "kashifweb-pro-entitlements"
 main = "src/index.ts"
 compatibility_date = "2026-08-23"
 
