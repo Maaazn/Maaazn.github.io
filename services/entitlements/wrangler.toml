@@ -8,4 +8,4 @@ compatibility_date = "2026-08-23"
 [[d1_databases]]
 binding = "DB"
 database_name = "kashifweb-entitlements"
-database_id = "REPLACE_AFTER_PRIVATE_D1_SETUP"
+database_id = "dc73d51c-9154-435e-94e8-1bd85872f885"
