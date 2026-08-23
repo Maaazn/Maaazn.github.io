@@ -3,6 +3,7 @@ import "./styles.css";
 import "./share.css";
 import "./launch.css";
 import "./pro-access.css";
+import "./pro-sync.css";
 import { auditHtml } from "./audit/engine";
 import type { AuditReport, Finding, FindingCategory } from "./audit/types";
 import { articles } from "./content/articles";
@@ -10,6 +11,7 @@ import { createShareCardUrl, parseShareCard, type ShareCardPayload } from "./rep
 import { saveReport } from "./pro/workspace";
 import { compareReports, listSavedReports, removeReport } from "./pro/workspace";
 import { clearProSession, currentProSession, entitlementApi, requestProSession } from "./pro/entitlement";
+import { syncWorkspace } from "./pro/sync";
 
 const SAMPLE_HTML = `<!doctype html>
 <html>
@@ -283,7 +285,8 @@ function renderProWorkspace(): void {
   document.documentElement.dir = "rtl";
   const saved = listSavedReports();
   const options = saved.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.label)} — ${new Intl.DateTimeFormat("ar-SA", { dateStyle: "short", timeStyle: "short" }).format(new Date(item.savedAt))}</option>`).join("");
-  app.innerHTML = `<main class="pro-workspace-page">${introTemplate()}<section class="workspace-head"><p class="eyebrow"><span></span> نموذج مساحة Pro — محلي على هذا الجهاز</p><h1>قارن ما تغيّر.<br /><i>ولا ترفع المصدر.</i></h1><p>هذه مساحة تجريبية لحفظ ملخصات التقارير ومقارنتها. لا تنشئ حساباً، ولا تحفظ HTML أو CSS، ولا تمثّل اشتراكاً مدفوعاً مفتوحاً بعد.</p><a class="button plain" href="#tool">← العودة إلى الفحص</a></section><section class="workspace-history"><div><p class="eyebrow">محفوظ محلياً</p><h2>${saved.length} مراجعة${saved.length === 1 ? "" : "ات"}</h2><p>احفظ تقريراً من صفحة الفحص لتبدأ خطاً زمنياً للمراجعات على هذا الجهاز.</p></div><div class="history-list">${saved.length ? saved.map((item) => `<article><div><b>${escapeHtml(item.label)}</b><span>${item.report.findings.length} إشارة · ${item.report.initialIndex}/100</span></div><button data-delete-report="${escapeHtml(item.id)}">حذف</button></article>`).join("") : `<p class="empty-workspace">لا توجد مراجعات محفوظة بعد.</p>`}</div></section>${saved.length > 1 ? `<section class="baseline-compare"><p class="eyebrow"><span></span> مقارنة baseline</p><h2>افهم ما ظهر وما حُل.</h2><div class="compare-controls"><label>الأساس<select id="baseline-report">${options}</select></label><label>المراجعة الأحدث<select id="current-report">${options}</select></label><button id="compare-reports" class="button primary">قارن التقريرين <span>←</span></button></div><div id="compare-output" class="compare-output"><p>اختر تقريرين ثم اطلب المقارنة.</p></div></section>` : ""}</main><footer class="site-footer"><span>كاشِف / KashifWeb</span><span>مساحة محلية من دون خادم</span><span>© 2026</span></footer>`;
+  const syncReady = Boolean(currentProSession() && entitlementApi());
+  app.innerHTML = `<main class="pro-workspace-page">${introTemplate()}<section class="workspace-head"><p class="eyebrow"><span></span> مساحة Pro — محلية أولاً</p><h1>قارن ما تغيّر.<br /><i>ولا ترفع المصدر.</i></h1><p>تُحفظ المراجعات كاملة على جهازك. عند تفعيل Pro، يمكنك نسخ ملخصات مؤشراتك ومعرّفات قواعدك فقط بين أجهزتك؛ لا نرفع HTML أو CSS.</p><a class="button plain" href="#tool">← العودة إلى الفحص</a></section><section class="workspace-history"><div><p class="eyebrow">محفوظ محلياً</p><h2>${saved.length} مراجعة${saved.length === 1 ? "" : "ات"}</h2><p>احفظ تقريراً من صفحة الفحص لتبدأ خطاً زمنياً للمراجعات على هذا الجهاز.</p><div class="pro-sync-panel"><b>نسخ Pro المتزامن</b><p id="pro-sync-status">${syncReady ? "جاهز لنسخ ملخصات هذه المراجعات فقط." : "يتطلب جلسة Pro نشطة وخدمة التحقق الخاصة."}</p><button id="sync-pro-reports" class="button plain" ${syncReady ? "" : "disabled"}>نسخ ملخصات المراجعات <span>←</span></button></div></div><div class="history-list">${saved.length ? saved.map((item) => `<article><div><b>${escapeHtml(item.label)}</b><span>${item.report.findings.length} إشارة · ${item.report.initialIndex}/100</span></div><button data-delete-report="${escapeHtml(item.id)}">حذف</button></article>`).join("") : `<p class="empty-workspace">لا توجد مراجعات محفوظة بعد.</p>`}</div></section>${saved.length > 1 ? `<section class="baseline-compare"><p class="eyebrow"><span></span> مقارنة baseline</p><h2>افهم ما ظهر وما حُل.</h2><div class="compare-controls"><label>الأساس<select id="baseline-report">${options}</select></label><label>المراجعة الأحدث<select id="current-report">${options}</select></label><button id="compare-reports" class="button primary">قارن التقريرين <span>←</span></button></div><div id="compare-output" class="compare-output"><p>اختر تقريرين ثم اطلب المقارنة.</p></div></section>` : ""}</main><footer class="site-footer"><span>كاشِف / KashifWeb</span><span>مساحة محلية من دون خادم</span><span>© 2026</span></footer>`;
   document.querySelectorAll<HTMLButtonElement>("[data-delete-report]").forEach((button) => button.addEventListener("click", () => {
     if (!window.confirm("حذف هذا الملخص المحلي؟ لا يمكن استعادته.")) return;
     removeReport(button.dataset.deleteReport ?? "");
@@ -300,6 +303,18 @@ function renderProWorkspace(): void {
     const delta = compareReports(baseline.report, current.report);
     const renderIds = (ids: string[]) => ids.length ? `<ul>${ids.map((id) => `<li>${escapeHtml(id)}</li>`).join("")}</ul>` : "<p>لا توجد عناصر.</p>";
     output.innerHTML = `<article><span>إشارات جديدة <b>${delta.newFindings.length}</b></span>${renderIds(delta.newFindings)}</article><article><span>إشارات حُلّت <b>${delta.resolvedFindings.length}</b></span>${renderIds(delta.resolvedFindings)}</article><article><span>إشارات مستمرة <b>${delta.persistentFindings.length}</b></span>${renderIds(delta.persistentFindings)}</article>`;
+  });
+  document.querySelector<HTMLButtonElement>("#sync-pro-reports")?.addEventListener("click", () => {
+    const button = document.querySelector<HTMLButtonElement>("#sync-pro-reports");
+    const status = document.querySelector<HTMLElement>("#pro-sync-status");
+    if (!button || !status) return;
+    button.disabled = true;
+    status.textContent = "ننسخ الملخصات فقط…";
+    void syncWorkspace(saved).then((remote) => {
+      status.textContent = `تمت مزامنة ${remote.length} ملخصاً. لم يُرفع HTML أو CSS أو مفتاح الترخيص.`;
+    }).catch((error) => {
+      status.textContent = error instanceof Error ? error.message : "تعذرت مزامنة ملخصات Pro.";
+    }).finally(() => { button.disabled = false; });
   });
 }
 
