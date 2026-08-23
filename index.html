@@ -1,102 +1,27 @@
 <!doctype html>
-<html lang="en">
+<html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="On Web Development — transport research for device-local workflows." />
-    <title>On Web Development — Protocol Fieldbook</title>
+    <meta name="theme-color" content="#12304A" />
+    <meta name="description" content="كاشف: فحص محلي الخصوصية للاستعداد للعربية وRTL وSEO وبنية صفحة الويب." />
+    <meta property="og:title" content="كاشف — افهم صفحة الويب قبل أن تنشرها" />
+    <meta property="og:description" content="تقرير محلي الخصوصية عن RTL وSEO وبنية الصفحة، من دون رفع كودك." />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="ar_SA" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <link rel="canonical" href="https://maaazn.github.io/" />
+    <link rel="alternate" hreflang="ar" href="https://maaazn.github.io/" />
+    <link rel="alternate" hreflang="en" href="https://maaazn.github.io/#en" />
+    <link rel="icon" type="image/png" href="https://files.manuscdn.com/user_upload_by_module/session_file/310519663375486418/GnWCwyewMCIwZAWj.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Mono&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css" />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"KashifWeb","applicationCategory":"DeveloperApplication","operatingSystem":"Web","inLanguage":["ar","en"],"description":"A privacy-first local source review workspace for Arabic/RTL, metadata, and page structure."}</script>
+    <title>كاشف — افهم صفحة الويب قبل أن تنشرها</title>
   </head>
   <body>
-    <header class="topline">
-      <a class="mark" href="#top" aria-label="On Web Development home"><span>ON</span><span>WEB</span><i></i></a>
-      <p>Independent protocol fieldbook <span>·</span> Research build 01</p>
-      <a href="#evidence" class="quiet-link">Read the evidence <span>↘</span></a>
-    </header>
-
-    <main id="top">
-      <section class="hero-grid">
-        <aside class="protocol-spine" aria-label="Protocol gates">
-          <p class="eyebrow">FIELD NOTE / 2026.08</p>
-          <ol>
-            <li class="done"><b>01</b><span>Transport shape</span></li>
-            <li class="done"><b>02</b><span>Loopback bridge</span></li>
-            <li><b>03</b><span>Device host</span></li>
-            <li><b>04</b><span>Pairing proof</span></li>
-          </ol>
-        </aside>
-        <div class="hero-copy">
-          <p class="eyebrow blue">ON WEB DEVELOPMENT</p>
-          <h1>Make the invisible<br /><em>testable.</em></h1>
-          <p class="lede">A candid research build for the boundary between browser transport and device-local development workflows. No credential flow. No synthetic success state.</p>
-          <div class="hero-actions">
-            <a class="button primary" href="#bridge">Explore the bridge <span>→</span></a>
-            <a class="button secondary" href="https://github.com/Maaazn/on-web-development" target="_blank" rel="noreferrer">Source fieldbook <span>↗</span></a>
-          </div>
-        </div>
-        <div class="hero-stamp">
-          <p>TRANSPORT<br />PROOF</p>
-          <strong>32</strong><small>BYTES</small>
-          <span>SHA-256 VERIFIED</span>
-        </div>
-      </section>
-
-      <section class="statement" id="bridge">
-        <p class="eyebrow">THE WORKING HYPOTHESIS</p>
-        <p>Safari speaks a web transport. A constrained local bridge translates the binary stream to one fixed TCP target. <mark>That transport pattern is proven.</mark> Pairing, identity, and signing remain separate gates until a device verifies them.</p>
-      </section>
-
-      <section class="evidence" id="evidence">
-        <div class="section-label"><span>01</span><h2>Evidence board</h2><p>Each card distinguishes a proved behavior from an untested claim.</p></div>
-        <div class="cards">
-          <article class="card proved">
-            <div class="card-head"><span>PROVED</span><b>G0.2</b></div>
-            <h3>Binary transport</h3>
-            <p>A 32-byte payload crossed a loopback-only WebSocket-to-TCP bridge and returned byte-identical.</p>
-            <code>sha256 7b84e52b…c2d92f04</code>
-          </article>
-          <article class="card bounded">
-            <div class="card-head"><span>BOUNDED</span><b>G1.0</b></div>
-            <h3>Bridge surface</h3>
-            <p>The test target is fixed to loopback. Browser input cannot choose an address, port, or protocol.</p>
-            <code>127.0.0.1 only</code>
-          </article>
-          <article class="card open">
-            <div class="card-head"><span>OPEN</span><b>G2.0</b></div>
-            <h3>Device pairing</h3>
-            <p>RPPairing compatibility is intentionally not claimed. It requires a separately observed device-host test.</p>
-            <code>awaiting device evidence</code>
-          </article>
-        </div>
-      </section>
-
-      <section class="architecture">
-        <div class="section-label"><span>02</span><h2>Small enough to inspect</h2></div>
-        <div class="flow" aria-label="Bridge architecture">
-          <div><small>01 / Browser</small><strong>WebSocket<br />binary frame</strong><p>Public test payload only</p></div>
-          <i>→</i>
-          <div><small>02 / Local bridge</small><strong>Origin gate<br />payload limit</strong><p>Loopback, fixed target</p></div>
-          <i>→</i>
-          <div><small>03 / TCP target</small><strong>Opaque byte<br />stream</strong><p>Echo in the current proof</p></div>
-        </div>
-      </section>
-
-      <section class="note-grid">
-        <div class="arabic-note" dir="rtl" lang="ar">
-          <span>ملاحظة عربية</span>
-          <p>هذا الموقع يوثّق تجربة نقل محلية قابلة للفحص. لا يطلب حساب Apple أو رمز تحقق أو شهادة، ولا يدّعي نجاح pairing قبل أن يظهر دليل من جهاز حقيقي.</p>
-        </div>
-        <div class="next-gate">
-          <p class="eyebrow">NEXT GATE</p>
-          <h2>Test the smallest honest thing.</h2>
-          <p>Before any account, certificate, or installer workflow, the next device test must prove a fixed local endpoint and a bounded binary stream.</p>
-          <a href="https://github.com/Maaazn/on-web-development" target="_blank" rel="noreferrer">Open the protocol notes <span>↗</span></a>
-        </div>
-      </section>
-    </main>
-    <footer><span>ON WEB DEVELOPMENT / RESEARCH BUILD</span><span>EN LTR · عربي RTL</span><span>NO CREDENTIAL FLOW ENABLED</span></footer>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

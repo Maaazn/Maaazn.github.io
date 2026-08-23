@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://maaazn.github.io/sitemap.xml
