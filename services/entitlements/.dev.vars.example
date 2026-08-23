@@ -1,0 +1,4 @@
+# Copy this to .dev.vars only for local private testing. Do not commit .dev.vars.
+PRO_PRODUCT_ID=replace-after-creating-the-gumroad-membership
+SESSION_SIGNING_SECRET=generate-a-long-random-value-in-the-secret-store
+ALLOWED_ORIGIN=https://maaazn.github.io

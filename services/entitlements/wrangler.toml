@@ -1,0 +1,11 @@
+name = "kashifweb-entitlements"
+main = "src/index.ts"
+compatibility_date = "2026-08-23"
+
+# Bind the generated D1 database ID only during private deployment.
+# Never put secrets in this file. Set SESSION_SIGNING_SECRET through the
+# provider secret store and set ALLOWED_ORIGIN to https://maaazn.github.io.
+[[d1_databases]]
+binding = "DB"
+database_name = "kashifweb-entitlements"
+database_id = "REPLACE_AFTER_PRIVATE_D1_SETUP"
