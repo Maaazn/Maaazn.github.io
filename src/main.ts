@@ -179,6 +179,8 @@ function renderLanding(): void {
           <strong>${currentProSession() ? "جلسة Pro نشطة على هذا الجهاز" : "قيد التحضير"}</strong>
           <p>الفحص الأساسي ومساحة المقارنة المحلية مجانيان. سيتطلب Pro المدفوع تحققاً مستقلاً فقط للمزايا الخادمية التي لا تحفظ المصدر.</p>
           <ul><li>مشاريع وتقارير محفوظة</li><li>مقارنة baseline بين التقارير</li><li>ملفات قواعد عربية قابلة للتكرار</li></ul>
+          <p class="pro-price">KashifWeb Pro — US$40 شهرياً عبر Gumroad. لا يمر الدفع أو بيانات البطاقة عبر كاشف.</p>
+          <a class="button primary pro-purchase" href="https://ghhhyyy.gumroad.com/l/iamkd?wanted=true" target="_blank" rel="noopener noreferrer">اشترِ KashifWeb Pro <span aria-hidden="true">↗</span></a>
           <form id="pro-access-form" class="pro-access-form">
             <label for="pro-license">لدي مفتاح Gumroad</label>
             <div><input id="pro-license" autocomplete="off" spellcheck="false" dir="ltr" placeholder="XXXXX-XXXXX-XXXXX" ${entitlementApi() ? "" : "disabled"} /><button class="button plain" type="submit" ${entitlementApi() ? "" : "disabled"}>تحقق من الوصول</button></div>
