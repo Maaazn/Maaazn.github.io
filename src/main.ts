@@ -2,12 +2,14 @@
 import "./styles.css";
 import "./share.css";
 import "./launch.css";
+import "./pro-access.css";
 import { auditHtml } from "./audit/engine";
 import type { AuditReport, Finding, FindingCategory } from "./audit/types";
 import { articles } from "./content/articles";
 import { createShareCardUrl, parseShareCard, type ShareCardPayload } from "./report/card";
 import { saveReport } from "./pro/workspace";
 import { compareReports, listSavedReports, removeReport } from "./pro/workspace";
+import { clearProSession, currentProSession, entitlementApi, requestProSession } from "./pro/entitlement";
 
 const SAMPLE_HTML = `<!doctype html>
 <html>
@@ -172,9 +174,15 @@ function renderLanding(): void {
         </div>
         <div class="pro-status" id="pro-details">
           <p class="status-label">حالة الاشتراك</p>
-          <strong>قيد التحضير</strong>
-          <p>لا يوجد رابط شراء أو تسليم مدفوع في هذه النسخة. لن نفتح الاشتراك قبل اختبار المزايا، وسياسة الاسترداد، وتسليم الوصول.</p>
+          <strong>${currentProSession() ? "جلسة Pro نشطة على هذا الجهاز" : "قيد التحضير"}</strong>
+          <p>الفحص الأساسي ومساحة المقارنة المحلية مجانيان. سيتطلب Pro المدفوع تحققاً مستقلاً فقط للمزايا الخادمية التي لا تحفظ المصدر.</p>
           <ul><li>مشاريع وتقارير محفوظة</li><li>مقارنة baseline بين التقارير</li><li>ملفات قواعد عربية قابلة للتكرار</li></ul>
+          <form id="pro-access-form" class="pro-access-form">
+            <label for="pro-license">لدي مفتاح Gumroad</label>
+            <div><input id="pro-license" autocomplete="off" spellcheck="false" dir="ltr" placeholder="XXXXX-XXXXX-XXXXX" ${entitlementApi() ? "" : "disabled"} /><button class="button plain" type="submit" ${entitlementApi() ? "" : "disabled"}>تحقق من الوصول</button></div>
+            <p id="pro-access-status">${entitlementApi() ? "نرسل المفتاح فقط إلى خدمة التحقق الخاصة، ولا نحفظه في هذا المتصفح." : "رابط التحقق الخاص لم يُفعّل بعد؛ لا توجد عملية شراء أو طلب مفتاح في هذه النسخة."}</p>
+          </form>
+          ${currentProSession() ? `<button id="clear-pro-session" class="text-button" type="button">إنهاء جلسة Pro على هذا الجهاز</button>` : ""}
         </div>
       </section>
     </main>
@@ -334,6 +342,30 @@ function bindLandingEvents(): void {
   });
   document.querySelector<HTMLButtonElement>("#run-audit")?.addEventListener("click", () => { void runAudit(); });
   document.querySelectorAll<HTMLButtonElement>(".article-card").forEach((button) => button.addEventListener("click", () => openArticle(button.dataset.article ?? "")));
+  bindProAccess();
+}
+
+function bindProAccess(): void {
+  const form = document.querySelector<HTMLFormElement>("#pro-access-form");
+  const status = document.querySelector<HTMLElement>("#pro-access-status");
+  form?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const input = document.querySelector<HTMLInputElement>("#pro-license");
+    const button = form.querySelector<HTMLButtonElement>("button");
+    const licenseKey = input?.value.trim() ?? "";
+    if (!licenseKey || !status || !button) return;
+    button.disabled = true;
+    status.textContent = "نتحقق من الاشتراك عبر المسار الخاص…";
+    void requestProSession(licenseKey)
+      .then(() => {
+        if (input) input.value = "";
+        status.textContent = "تم التحقق من وصول Pro على هذا الجهاز. تنتهي الجلسة تلقائياً ولا يُحفظ المفتاح.";
+        renderLanding();
+      })
+      .catch((error) => { status.textContent = error instanceof Error ? error.message : "تعذر التحقق من الوصول."; })
+      .finally(() => { button.disabled = false; });
+  });
+  document.querySelector<HTMLButtonElement>("#clear-pro-session")?.addEventListener("click", () => { clearProSession(); renderLanding(); });
 }
 
 async function runAudit(): Promise<void> {
