@@ -6,6 +6,8 @@ import { auditHtml } from "./audit/engine";
 import type { AuditReport, Finding, FindingCategory } from "./audit/types";
 import { articles } from "./content/articles";
 import { createShareCardUrl, parseShareCard, type ShareCardPayload } from "./report/card";
+import { saveReport } from "./pro/workspace";
+import { compareReports, listSavedReports, removeReport } from "./pro/workspace";
 
 const SAMPLE_HTML = `<!doctype html>
 <html>
@@ -166,7 +168,7 @@ function renderLanding(): void {
           <p class="eyebrow"><span></span> مساحة عمل مدفوعة — قيد الإعداد</p>
           <h2 id="pro-title">ليس جداراً فوق<br />فحص <i>مجاني</i>.</h2>
           <p>سيبقى الفحص المحلي الأساسي متاحاً بلا حساب. كاشف Pro يضيف مساراً منفصلاً للمطور الذي يحتاج خطاً زمنياً للمراجعات، مقارنة بين النتائج، وملفات قواعد قابلة للتكرار.</p>
-          <a class="button plain" href="#pro-details">اطّلع على ما سيصل <span aria-hidden="true">←</span></a>
+          <a class="button plain" href="#pro-workspace">جرّب نموذج مساحة العمل <span aria-hidden="true">←</span></a>
         </div>
         <div class="pro-status" id="pro-details">
           <p class="status-label">حالة الاشتراك</p>
@@ -194,7 +196,7 @@ function renderReport(report: AuditReport): void {
       <div><p class="eyebrow">تقرير محلي — ${escapeHtml(report.sourceLabel)}</p><h2>دليل الصفحة،<br />مرتب حسب الأولوية.</h2><p class="report-timestamp">أُنشئ في ${new Intl.DateTimeFormat("ar-SA", { dateStyle: "medium", timeStyle: "short" }).format(new Date(report.generatedAt))} · حزمة القواعد ${report.rulePackVersion} · ${report.analysisDurationMs}ms محلياً</p></div>
       <div class="index-panel"><span>مؤشر مبدئي</span><strong>${report.initialIndex}</strong><small>ليس تصنيفاً خارجياً</small></div>
     </div>
-    <div class="report-summary"><span><b>${errors}</b> تتطلب معالجة</span><span><b>${warnings}</b> تحسينات مقترحة</span><span><b>${report.findings.length}</b> إشارة مرصودة</span><button id="download-report">صدّر JSON <span>↓</span></button><button id="print-report" class="secondary-action">اطبع التقرير <span>↙</span></button><button id="copy-share-card" class="secondary-action">انسخ بطاقة ملخص <span>↗</span></button></div>
+    <div class="report-summary"><span><b>${errors}</b> تتطلب معالجة</span><span><b>${warnings}</b> تحسينات مقترحة</span><span><b>${report.findings.length}</b> إشارة مرصودة</span><button id="download-report">صدّر JSON <span>↓</span></button><button id="print-report" class="secondary-action">اطبع التقرير <span>↙</span></button><button id="copy-share-card" class="secondary-action">انسخ بطاقة ملخص <span>↗</span></button><button id="save-workspace" class="secondary-action">احفظ للمقارنة <span>＋</span></button></div>
     <div class="findings-groups">${grouped.map(({ category, items }) => `
       <section class="finding-group"><div class="group-title"><span>${categoryLabel(category)}</span><b>${String(items.length).padStart(2, "0")}</b></div>
         ${items.length ? items.map((finding) => findingTemplate(finding)).join("") : `<p class="group-clear">لم يرصد كاشف قاعدة من هذه الفئة في المصدر المقدم.</p>`}
@@ -205,6 +207,18 @@ function renderReport(report: AuditReport): void {
   document.querySelector<HTMLButtonElement>("#download-report")?.addEventListener("click", () => downloadReport(report));
   document.querySelector<HTMLButtonElement>("#print-report")?.addEventListener("click", () => window.print());
   document.querySelector<HTMLButtonElement>("#copy-share-card")?.addEventListener("click", () => { void copyShareCard(report); });
+  document.querySelector<HTMLButtonElement>("#save-workspace")?.addEventListener("click", () => saveCurrentReportToWorkspace(report));
+}
+
+function saveCurrentReportToWorkspace(report: AuditReport): void {
+  const status = document.querySelector<HTMLElement>("#audit-status");
+  const label = report.sourceLabel === "مصدر HTML محلي" ? `مراجعة محلية — ${new Intl.DateTimeFormat("ar-SA", { dateStyle: "short", timeStyle: "short" }).format(new Date())}` : report.sourceLabel;
+  try {
+    saveReport(report, label);
+    if (status) status.textContent = "حُفظ ملخص التقرير محلياً في مساحة العمل. لا يُحفظ HTML أو CSS الذي فُحص.";
+  } catch (error) {
+    if (status) status.textContent = error instanceof Error ? error.message : "تعذر حفظ التقرير محلياً.";
+  }
 }
 
 function findingTemplate(finding: Finding): string {
@@ -254,6 +268,31 @@ function renderEnglishPage(): void {
     <section class="english-boundary"><h2>What KashifWeb does not claim.</h2><p>It is not a crawler, a WCAG certification, a security audit, a search-ranking predictor, or a substitute for testing the rendered page in target browsers. It does not execute inspected-page scripts, bypass CORS, or collect source code in its primary flow.</p></section>
     <section class="english-pro"><p class="eyebrow"><span></span> Pro workspace — in preparation</p><h2>Paid work must deliver a real workflow.</h2><p>KashifWeb Pro is being prepared as a private workspace for saved review projects, baseline comparison and repeatable Arabic-first rule profiles. The free local audit remains available without an account. No checkout is live until the Pro workflow and delivery path are tested.</p><a class="button plain" href="#pro">Read the Arabic Pro outline <span aria-hidden="true">→</span></a></section>
   </main><footer class="site-footer"><span>KashifWeb / كاشِف</span><span>Local source. Reviewable evidence.</span><span>© 2026</span></footer>`;
+}
+
+function renderProWorkspace(): void {
+  document.documentElement.lang = "ar";
+  document.documentElement.dir = "rtl";
+  const saved = listSavedReports();
+  const options = saved.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.label)} — ${new Intl.DateTimeFormat("ar-SA", { dateStyle: "short", timeStyle: "short" }).format(new Date(item.savedAt))}</option>`).join("");
+  app.innerHTML = `<main class="pro-workspace-page">${introTemplate()}<section class="workspace-head"><p class="eyebrow"><span></span> نموذج مساحة Pro — محلي على هذا الجهاز</p><h1>قارن ما تغيّر.<br /><i>ولا ترفع المصدر.</i></h1><p>هذه مساحة تجريبية لحفظ ملخصات التقارير ومقارنتها. لا تنشئ حساباً، ولا تحفظ HTML أو CSS، ولا تمثّل اشتراكاً مدفوعاً مفتوحاً بعد.</p><a class="button plain" href="#tool">← العودة إلى الفحص</a></section><section class="workspace-history"><div><p class="eyebrow">محفوظ محلياً</p><h2>${saved.length} مراجعة${saved.length === 1 ? "" : "ات"}</h2><p>احفظ تقريراً من صفحة الفحص لتبدأ خطاً زمنياً للمراجعات على هذا الجهاز.</p></div><div class="history-list">${saved.length ? saved.map((item) => `<article><div><b>${escapeHtml(item.label)}</b><span>${item.report.findings.length} إشارة · ${item.report.initialIndex}/100</span></div><button data-delete-report="${escapeHtml(item.id)}">حذف</button></article>`).join("") : `<p class="empty-workspace">لا توجد مراجعات محفوظة بعد.</p>`}</div></section>${saved.length > 1 ? `<section class="baseline-compare"><p class="eyebrow"><span></span> مقارنة baseline</p><h2>افهم ما ظهر وما حُل.</h2><div class="compare-controls"><label>الأساس<select id="baseline-report">${options}</select></label><label>المراجعة الأحدث<select id="current-report">${options}</select></label><button id="compare-reports" class="button primary">قارن التقريرين <span>←</span></button></div><div id="compare-output" class="compare-output"><p>اختر تقريرين ثم اطلب المقارنة.</p></div></section>` : ""}</main><footer class="site-footer"><span>كاشِف / KashifWeb</span><span>مساحة محلية من دون خادم</span><span>© 2026</span></footer>`;
+  document.querySelectorAll<HTMLButtonElement>("[data-delete-report]").forEach((button) => button.addEventListener("click", () => {
+    if (!window.confirm("حذف هذا الملخص المحلي؟ لا يمكن استعادته.")) return;
+    removeReport(button.dataset.deleteReport ?? "");
+    renderProWorkspace();
+  }));
+  document.querySelector<HTMLButtonElement>("#compare-reports")?.addEventListener("click", () => {
+    const baselineId = document.querySelector<HTMLSelectElement>("#baseline-report")?.value;
+    const currentId = document.querySelector<HTMLSelectElement>("#current-report")?.value;
+    const baseline = saved.find((item) => item.id === baselineId);
+    const current = saved.find((item) => item.id === currentId);
+    const output = document.querySelector<HTMLElement>("#compare-output");
+    if (!output || !baseline || !current) return;
+    if (baseline.id === current.id) { output.innerHTML = "<p>اختر تقريرين مختلفين لتظهر المقارنة.</p>"; return; }
+    const delta = compareReports(baseline.report, current.report);
+    const renderIds = (ids: string[]) => ids.length ? `<ul>${ids.map((id) => `<li>${escapeHtml(id)}</li>`).join("")}</ul>` : "<p>لا توجد عناصر.</p>";
+    output.innerHTML = `<article><span>إشارات جديدة <b>${delta.newFindings.length}</b></span>${renderIds(delta.newFindings)}</article><article><span>إشارات حُلّت <b>${delta.resolvedFindings.length}</b></span>${renderIds(delta.resolvedFindings)}</article><article><span>إشارات مستمرة <b>${delta.persistentFindings.length}</b></span>${renderIds(delta.persistentFindings)}</article>`;
+  });
 }
 
 function openUtilityPage(page: string): void {
@@ -341,6 +380,7 @@ function route(): void {
   if (card) renderShareCard(card);
   else if (hash === "en") renderEnglishPage();
   else if (hash === "pro") { renderLanding(); window.setTimeout(() => document.querySelector("#pro")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0); }
+  else if (hash === "pro-workspace") renderProWorkspace();
   else if (hash.startsWith("guide/")) openArticle(hash.split("/")[1]);
   else if (["privacy", "terms", "methodology", "contact"].includes(hash)) openUtilityPage(hash);
   else { document.documentElement.lang = "ar"; document.documentElement.dir = "rtl"; renderLanding(); }
