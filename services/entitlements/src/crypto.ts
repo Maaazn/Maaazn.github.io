@@ -1,4 +1,5 @@
 const encoder = new TextEncoder();
+const decoder = new TextDecoder();
 
 export function base64Url(bytes: Uint8Array): string {
   let value = "";
@@ -8,6 +9,12 @@ export function base64Url(bytes: Uint8Array): string {
 
 export function base64UrlText(value: string): string {
   return base64Url(encoder.encode(value));
+}
+
+export function base64UrlDecodeText(value: string): string {
+  const padded = value.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
+  const binary = atob(padded);
+  return decoder.decode(Uint8Array.from(binary, (character) => character.charCodeAt(0)));
 }
 
 export async function sha256(value: string): Promise<string> {
