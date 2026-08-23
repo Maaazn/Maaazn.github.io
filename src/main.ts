@@ -47,6 +47,7 @@ function introTemplate(): string {
       </a>
       <nav aria-label="التنقل الرئيسي">
         <a href="#tool">الأداة</a>
+        <a href="#pro">Pro</a>
         <a href="#method">المنهجية</a>
         <a href="#guides">الأدلة</a>
         <a href="#about">عن كاشف</a>
@@ -158,6 +159,22 @@ function renderLanding(): void {
           <div><a href="#privacy">الخصوصية</a><a href="#terms">الشروط</a><a href="#methodology">المنهجية الكاملة</a><a href="#contact">التواصل</a></div>
         </div>
       </section>
+
+      <section id="pro" class="pro-section" aria-labelledby="pro-title">
+        <div class="pro-mark" aria-hidden="true">P/01</div>
+        <div class="pro-copy">
+          <p class="eyebrow"><span></span> مساحة عمل مدفوعة — قيد الإعداد</p>
+          <h2 id="pro-title">ليس جداراً فوق<br />فحص <i>مجاني</i>.</h2>
+          <p>سيبقى الفحص المحلي الأساسي متاحاً بلا حساب. كاشف Pro يضيف مساراً منفصلاً للمطور الذي يحتاج خطاً زمنياً للمراجعات، مقارنة بين النتائج، وملفات قواعد قابلة للتكرار.</p>
+          <a class="button plain" href="#pro-details">اطّلع على ما سيصل <span aria-hidden="true">←</span></a>
+        </div>
+        <div class="pro-status" id="pro-details">
+          <p class="status-label">حالة الاشتراك</p>
+          <strong>قيد التحضير</strong>
+          <p>لا يوجد رابط شراء أو تسليم مدفوع في هذه النسخة. لن نفتح الاشتراك قبل اختبار المزايا، وسياسة الاسترداد، وتسليم الوصول.</p>
+          <ul><li>مشاريع وتقارير محفوظة</li><li>مقارنة baseline بين التقارير</li><li>ملفات قواعد عربية قابلة للتكرار</li></ul>
+        </div>
+      </section>
     </main>
     <footer class="site-footer"><span>كاشِف / KashifWeb</span><span>مصدر محلي. نتائج قابلة للمراجعة.</span><span>© 2026</span></footer>
   `;
@@ -230,11 +247,12 @@ function renderEnglishPage(): void {
   document.documentElement.lang = "en";
   document.documentElement.dir = "ltr";
   app.innerHTML = `<main class="english-page" lang="en" dir="ltr">
-    <header class="english-header"><a class="brand" href="#tool" aria-label="KashifWeb home"><img src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663375486418/GnWCwyewMCIwZAWj.png" alt="" width="46" height="46" /><span><b>KashifWeb</b><em>كاشِف</em></span></a><nav><a href="#tool">Arabic workspace</a><a href="#method">Method</a><a href="#guides">Guides</a><a href="#privacy">Privacy</a></nav><a class="language-link" href="#tool" lang="ar" dir="rtl">العربية</a></header>
+    <header class="english-header"><a class="brand" href="#tool" aria-label="KashifWeb home"><img src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663375486418/GnWCwyewMCIwZAWj.png" alt="" width="46" height="46" /><span><b>KashifWeb</b><em>كاشِف</em></span></a><nav><a href="#tool">Arabic workspace</a><a href="#pro">Pro</a><a href="#method">Method</a><a href="#guides">Guides</a><a href="#privacy">Privacy</a></nav><a class="language-link" href="#tool" lang="ar" dir="rtl">العربية</a></header>
     <section class="english-hero"><p class="eyebrow"><span></span> Arabic-first source review</p><h1>Make Arabic web quality<br /><i>legible</i> before release.</h1><p>KashifWeb is a local, evidence-led review workspace for the HTML and CSS you choose. It identifies practical Arabic/RTL, metadata, and document-structure signals without uploading your source by default.</p><div class="hero-actions"><a class="button primary" href="#tool">Open the Arabic workspace <span aria-hidden="true">→</span></a><a class="button plain" href="#method">See the method</a></div></section>
     <section class="english-principles"><div><span>01</span><h2>Local by default</h2><p>Paste source or choose a file. Analysis happens in your browser. URL mode reads only what the target deliberately makes available through CORS.</p></div><div><span>02</span><h2>Rules, not theatre</h2><p>Each finding includes a detected signal, a reason, an actionable repair path, and an explicit boundary. The local index is never presented as an external ranking.</p></div><div><span>03</span><h2>Arabic-aware engineering</h2><p>Direction, language declaration, bidi context, logical CSS, form direction, Arabic locale metadata, and local-business data are reviewed alongside essential page structure.</p></div></section>
     <section class="english-workflow"><div><p class="eyebrow"><span></span> How the review works</p><h2>A short path from source<br />to an informed next step.</h2></div><ol><li><b>Bring a source</b><span>Choose an HTML file, paste source, and optionally include separate CSS.</span></li><li><b>Read the evidence</b><span>Review findings grouped by Arabic/RTL, metadata, and document structure.</span></li><li><b>Export intentionally</b><span>Download JSON, print the local report, or share a compact card that excludes inspected HTML and CSS.</span></li></ol></section>
     <section class="english-boundary"><h2>What KashifWeb does not claim.</h2><p>It is not a crawler, a WCAG certification, a security audit, a search-ranking predictor, or a substitute for testing the rendered page in target browsers. It does not execute inspected-page scripts, bypass CORS, or collect source code in its primary flow.</p></section>
+    <section class="english-pro"><p class="eyebrow"><span></span> Pro workspace — in preparation</p><h2>Paid work must deliver a real workflow.</h2><p>KashifWeb Pro is being prepared as a private workspace for saved review projects, baseline comparison and repeatable Arabic-first rule profiles. The free local audit remains available without an account. No checkout is live until the Pro workflow and delivery path are tested.</p><a class="button plain" href="#pro">Read the Arabic Pro outline <span aria-hidden="true">→</span></a></section>
   </main><footer class="site-footer"><span>KashifWeb / كاشِف</span><span>Local source. Reviewable evidence.</span><span>© 2026</span></footer>`;
 }
 
@@ -322,6 +340,7 @@ function route(): void {
   const card = parseShareCard(hash);
   if (card) renderShareCard(card);
   else if (hash === "en") renderEnglishPage();
+  else if (hash === "pro") { renderLanding(); window.setTimeout(() => document.querySelector("#pro")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0); }
   else if (hash.startsWith("guide/")) openArticle(hash.split("/")[1]);
   else if (["privacy", "terms", "methodology", "contact"].includes(hash)) openUtilityPage(hash);
   else { document.documentElement.lang = "ar"; document.documentElement.dir = "rtl"; renderLanding(); }
