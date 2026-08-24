@@ -4,6 +4,7 @@ import "./share.css";
 import "./launch.css";
 import "./pro-access.css";
 import "./pro-sync.css";
+import "./score.css";
 import { auditHtml, rulePack } from "./audit/engine";
 import { buildActionPlan } from "./audit/action-plan";
 import type { AuditReport, Finding, FindingCategory } from "./audit/types";
@@ -45,6 +46,12 @@ function severityLabel(severity: Finding["severity"]): string {
 
 function categoryLabel(category: FindingCategory): string {
   return ({ rtl: "العربية وRTL", seo: "SEO والبيانات", structure: "بنية الصفحة", accessibility: "الإتاحة", performance: "الأداء" })[category];
+}
+
+function reviewScoreTemplate(report: AuditReport): string {
+  const reviewScore = report.reviewScore;
+  if (!reviewScore) return "";
+  return `<section class="score-detail" aria-labelledby="score-detail-title"><div class="score-detail-header"><div><p class="eyebrow">كيف حُسبت النتيجة؟</p><h3 id="score-detail-title">مؤشر مراجعة المصدر، لا ترتيب خارجي.</h3><p>${escapeHtml(reviewScore.method)}</p><p class="score-method">${reviewScore.categories.reduce((total, category) => total + category.ruleCount, 0)} قاعدة موزعة على خمس فئات. لا يُنقَص من الدرجة لعدم وجود ميزة اختيارية أكثر من سقف الملاحظات السياقية للفئة.</p></div><div class="score-overall"><b>${reviewScore.value}</b><span>${escapeHtml(reviewScore.label)}</span></div></div><div class="score-breakdown">${reviewScore.categories.map((category) => `<article class="score-category"><div class="score-category-top"><h4>${escapeHtml(category.label)}</h4><b>${category.score}</b></div><div class="score-track" aria-hidden="true"><span style="width:${category.score}%"></span></div><p>${category.findingCount ? `${category.findingCount} إشارة · خصم ${category.deduction}` : "لا إشارة مرصودة في المصدر"}</p></article>`).join("")}</div><ul class="score-legend"><li><b>خطأ</b> يخفض أكثر لأنه يحتاج معالجة مباشرة.</li><li><b>تحسين</b> يخفض بدرجة متوسطة.</li><li><b>ملاحظة</b> أثرها محدود ولا تتراكم بلا سقف.</li></ul></section>`;
 }
 
 function introTemplate(): string {
@@ -272,7 +279,7 @@ function renderReport(report: AuditReport): void {
   output.innerHTML = `
     <div class="report-head">
       <div><p class="eyebrow">تقرير محلي — ${escapeHtml(report.sourceLabel)}</p><h2>دليل الصفحة،<br />مرتب حسب الأولوية.</h2><p class="report-timestamp">أُنشئ في ${new Intl.DateTimeFormat("ar-SA", { dateStyle: "medium", timeStyle: "short" }).format(new Date(report.generatedAt))} · حزمة القواعد ${report.rulePackVersion} · ${report.analysisDurationMs}ms محلياً</p></div>
-      <div class="index-panel"><span>مؤشر مبدئي</span><strong>${report.initialIndex}</strong><small>ليس تصنيفاً خارجياً</small></div>
+      <div class="index-panel"><span>مؤشر مراجعة المصدر</span><strong>${report.initialIndex}</strong><small>${escapeHtml(report.reviewScore?.label ?? "ليس تصنيفاً خارجياً")}</small></div>
     </div>
     <div class="report-summary"><span><b>${errors}</b> تتطلب معالجة</span><span><b>${warnings}</b> تحسينات مقترحة</span><span><b>${report.findings.length}</b> إشارة مرصودة</span><button id="download-action-plan">نزّل خطة إصلاح <span>↓</span></button><button id="download-report">صدّر JSON <span>↓</span></button><button id="print-report" class="secondary-action">اطبع التقرير <span>↙</span></button><button id="copy-share-card" class="secondary-action">انسخ بطاقة ملخص <span>↗</span></button><button id="save-workspace" class="secondary-action">احفظ للمقارنة <span>＋</span></button></div>
     <div class="findings-groups">${grouped.map(({ category, items }) => `
@@ -280,6 +287,7 @@ function renderReport(report: AuditReport): void {
         ${items.length ? items.map((finding) => findingTemplate(finding)).join("") : `<p class="group-clear">لم يرصد كاشف قاعدة من هذه الفئة في المصدر المقدم.</p>`}
       </section>
     `).join("")}</div>
+    ${reviewScoreTemplate(report)}
     <aside class="limits"><b>حدود هذا التقرير</b><ul>${report.limitations.map((limitation) => `<li>${escapeHtml(limitation)}</li>`).join("")}</ul></aside>
   `;
   document.querySelector<HTMLButtonElement>("#download-action-plan")?.addEventListener("click", () => downloadActionPlan(report));

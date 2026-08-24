@@ -20,5 +20,6 @@ export interface AuditReport {
   analysisDurationMs: number;
   rulePackVersion: string;
   findings: Finding[];
+  reviewScore?: import("./score").ReviewScore;
   limitations: string[];
 }
