@@ -9,9 +9,6 @@ import type { AuditReport, Finding, FindingCategory } from "./audit/types";
 import { articles } from "./content/articles";
 import { createShareCardUrl, parseShareCard, type ShareCardPayload } from "./report/card";
 import { saveReport } from "./pro/workspace";
-import { compareReports, listSavedReports, removeReport } from "./pro/workspace";
-import { clearProSession, currentProSession, entitlementApi, requestProSession } from "./pro/entitlement";
-import { syncWorkspace } from "./pro/sync";
 
 const SAMPLE_HTML = `<!doctype html>
 <html>
@@ -53,7 +50,7 @@ function introTemplate(): string {
       </a>
       <nav aria-label="التنقل الرئيسي">
         <a href="#tool">الأداة</a>
-        <a href="#pro">Pro</a>
+        <a href="#readiness">جاهزية النشر</a>
         <a href="#method">المنهجية</a>
         <a href="#guides">الأدلة</a>
         <a href="#about">عن كاشف</a>
@@ -78,7 +75,7 @@ function renderLanding(): void {
           </div>
           <dl class="hero-facts">
             <div><dt>0</dt><dd>ملفات مرفوعة لخادم</dd></div>
-            <div><dt>3</dt><dd>مسارات فحص أولية</dd></div>
+            <div><dt>3</dt><dd>طرق إدخال محلية</dd></div>
             <div><dt>1</dt><dd>تقرير مفهوم لك وللفريق</dd></div>
           </dl>
         </div>
@@ -166,27 +163,20 @@ function renderLanding(): void {
         </div>
       </section>
 
-      <section id="pro" class="pro-section" aria-labelledby="pro-title">
+      <section id="readiness" class="pro-section" aria-labelledby="readiness-title">
         <div class="pro-mark" aria-hidden="true">P/01</div>
         <div class="pro-copy">
-          <p class="eyebrow"><span></span> مساحة عمل مدفوعة — قيد الإعداد</p>
-          <h2 id="pro-title">ليس جداراً فوق<br />فحص <i>مجاني</i>.</h2>
-          <p>سيبقى الفحص المحلي الأساسي متاحاً بلا حساب. كاشف Pro يضيف مساراً منفصلاً للمطور الذي يحتاج خطاً زمنياً للمراجعات، مقارنة بين النتائج، وملفات قواعد قابلة للتكرار.</p>
-          <a class="button plain" href="#pro-workspace">جرّب نموذج مساحة العمل <span aria-hidden="true">←</span></a>
+          <p class="eyebrow"><span></span> قبل طلب أي مراجعة خارجية</p>
+          <h2 id="readiness-title">اجعل الصفحة مفيدة<br />قبل أن تطلب <i>الثقة</i>.</h2>
+          <p>ابدأ بتقرير محلي، أصلح الدليل الذي يظهر لك، ثم اختبر الصفحة المنشورة على الهاتف وسطح المكتب. لا يختصر كاشف هذا المسار ولا يحوّل مؤشره إلى شهادة أو وعد بقبول إعلان أو تصنيف.</p>
+          <a class="button plain" href="#guides">ابدأ بدليل عملي <span aria-hidden="true">←</span></a>
         </div>
-        <div class="pro-status" id="pro-details">
-          <p class="status-label">حالة الاشتراك</p>
-          <strong>${currentProSession() ? "جلسة Pro نشطة على هذا الجهاز" : "قيد التحضير"}</strong>
-          <p>الفحص الأساسي ومساحة المقارنة المحلية مجانيان. سيتطلب Pro المدفوع تحققاً مستقلاً فقط للمزايا الخادمية التي لا تحفظ المصدر.</p>
-          <ul><li>مشاريع وتقارير محفوظة</li><li>مقارنة baseline بين التقارير</li><li>ملفات قواعد عربية قابلة للتكرار</li></ul>
-          <p class="pro-price">KashifWeb Pro — US$40 شهرياً عبر Gumroad. لا يمر الدفع أو بيانات البطاقة عبر كاشف.</p>
-          <a class="button primary pro-purchase" href="https://ghhhyyy.gumroad.com/l/iamkd?wanted=true" target="_blank" rel="noopener noreferrer">اشترِ KashifWeb Pro <span aria-hidden="true">↗</span></a>
-          <form id="pro-access-form" class="pro-access-form">
-            <label for="pro-license">لدي مفتاح Gumroad</label>
-            <div><input id="pro-license" autocomplete="off" spellcheck="false" dir="ltr" placeholder="XXXXX-XXXXX-XXXXX" ${entitlementApi() ? "" : "disabled"} /><button class="button plain" type="submit" ${entitlementApi() ? "" : "disabled"}>تحقق من الوصول</button></div>
-            <p id="pro-access-status">${entitlementApi() ? "نرسل المفتاح فقط إلى خدمة التحقق الخاصة، ولا نحفظه في هذا المتصفح." : "رابط التحقق الخاص لم يُفعّل بعد؛ لا توجد عملية شراء أو طلب مفتاح في هذه النسخة."}</p>
-          </form>
-          ${currentProSession() ? `<button id="clear-pro-session" class="text-button" type="button">إنهاء جلسة Pro على هذا الجهاز</button>` : ""}
+        <div class="pro-status" id="readiness-details">
+          <p class="status-label">مسار مراجعة واقعي</p>
+          <strong>لا تطلب مراجعة قبل اكتمال الصفحة.</strong>
+          <p>استخدم هذا التسلسل كقائمة عمل، وليس كضمان من أي منصة خارجية.</p>
+          <ul><li>قدّم محتوى أصلياً يشرح مشكلة أو قراراً تقنياً مفيداً.</li><li>اختبر التنقل والقراءة على الهاتف وسطح المكتب.</li><li>أضف الخصوصية والشروط والتواصل، ثم راجع الدليل داخل التقرير.</li></ul>
+          <p class="pro-price">الفحص المحلي ومساحة مقارنة التقارير متاحان في النسخة الحالية من دون شراء أو حساب.</p>
         </div>
       </section>
     </main>
@@ -282,44 +272,6 @@ function renderEnglishPage(): void {
   </main><footer class="site-footer"><span>KashifWeb / كاشِف</span><span>Local source. Reviewable evidence.</span><span>© 2026</span></footer>`;
 }
 
-function renderProWorkspace(): void {
-  document.documentElement.lang = "ar";
-  document.documentElement.dir = "rtl";
-  const saved = listSavedReports();
-  const options = saved.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.label)} — ${new Intl.DateTimeFormat("ar-SA", { dateStyle: "short", timeStyle: "short" }).format(new Date(item.savedAt))}</option>`).join("");
-  const syncReady = Boolean(currentProSession() && entitlementApi());
-  app.innerHTML = `<main class="pro-workspace-page">${introTemplate()}<section class="workspace-head"><p class="eyebrow"><span></span> مساحة Pro — محلية أولاً</p><h1>قارن ما تغيّر.<br /><i>ولا ترفع المصدر.</i></h1><p>تُحفظ المراجعات كاملة على جهازك. عند تفعيل Pro، يمكنك نسخ ملخصات مؤشراتك ومعرّفات قواعدك فقط بين أجهزتك؛ لا نرفع HTML أو CSS.</p><a class="button plain" href="#tool">← العودة إلى الفحص</a></section><section class="workspace-history"><div><p class="eyebrow">محفوظ محلياً</p><h2>${saved.length} مراجعة${saved.length === 1 ? "" : "ات"}</h2><p>احفظ تقريراً من صفحة الفحص لتبدأ خطاً زمنياً للمراجعات على هذا الجهاز.</p><div class="pro-sync-panel"><b>نسخ Pro المتزامن</b><p id="pro-sync-status">${syncReady ? "جاهز لنسخ ملخصات هذه المراجعات فقط." : "يتطلب جلسة Pro نشطة وخدمة التحقق الخاصة."}</p><button id="sync-pro-reports" class="button plain" ${syncReady ? "" : "disabled"}>نسخ ملخصات المراجعات <span>←</span></button></div></div><div class="history-list">${saved.length ? saved.map((item) => `<article><div><b>${escapeHtml(item.label)}</b><span>${item.report.findings.length} إشارة · ${item.report.initialIndex}/100</span></div><button data-delete-report="${escapeHtml(item.id)}">حذف</button></article>`).join("") : `<p class="empty-workspace">لا توجد مراجعات محفوظة بعد.</p>`}</div></section>${saved.length > 1 ? `<section class="baseline-compare"><p class="eyebrow"><span></span> مقارنة baseline</p><h2>افهم ما ظهر وما حُل.</h2><div class="compare-controls"><label>الأساس<select id="baseline-report">${options}</select></label><label>المراجعة الأحدث<select id="current-report">${options}</select></label><button id="compare-reports" class="button primary">قارن التقريرين <span>←</span></button></div><div id="compare-output" class="compare-output"><p>اختر تقريرين ثم اطلب المقارنة.</p></div></section>` : ""}</main><footer class="site-footer"><span>كاشِف / KashifWeb</span><span>مساحة محلية من دون خادم</span><span>© 2026</span></footer>`;
-  document.querySelectorAll<HTMLButtonElement>("[data-delete-report]").forEach((button) => button.addEventListener("click", () => {
-    if (!window.confirm("حذف هذا الملخص المحلي؟ لا يمكن استعادته.")) return;
-    removeReport(button.dataset.deleteReport ?? "");
-    renderProWorkspace();
-  }));
-  document.querySelector<HTMLButtonElement>("#compare-reports")?.addEventListener("click", () => {
-    const baselineId = document.querySelector<HTMLSelectElement>("#baseline-report")?.value;
-    const currentId = document.querySelector<HTMLSelectElement>("#current-report")?.value;
-    const baseline = saved.find((item) => item.id === baselineId);
-    const current = saved.find((item) => item.id === currentId);
-    const output = document.querySelector<HTMLElement>("#compare-output");
-    if (!output || !baseline || !current) return;
-    if (baseline.id === current.id) { output.innerHTML = "<p>اختر تقريرين مختلفين لتظهر المقارنة.</p>"; return; }
-    const delta = compareReports(baseline.report, current.report);
-    const renderIds = (ids: string[]) => ids.length ? `<ul>${ids.map((id) => `<li>${escapeHtml(id)}</li>`).join("")}</ul>` : "<p>لا توجد عناصر.</p>";
-    output.innerHTML = `<article><span>إشارات جديدة <b>${delta.newFindings.length}</b></span>${renderIds(delta.newFindings)}</article><article><span>إشارات حُلّت <b>${delta.resolvedFindings.length}</b></span>${renderIds(delta.resolvedFindings)}</article><article><span>إشارات مستمرة <b>${delta.persistentFindings.length}</b></span>${renderIds(delta.persistentFindings)}</article>`;
-  });
-  document.querySelector<HTMLButtonElement>("#sync-pro-reports")?.addEventListener("click", () => {
-    const button = document.querySelector<HTMLButtonElement>("#sync-pro-reports");
-    const status = document.querySelector<HTMLElement>("#pro-sync-status");
-    if (!button || !status) return;
-    button.disabled = true;
-    status.textContent = "ننسخ الملخصات فقط…";
-    void syncWorkspace(saved).then((remote) => {
-      status.textContent = `تمت مزامنة ${remote.length} ملخصاً. لم يُرفع HTML أو CSS أو مفتاح الترخيص.`;
-    }).catch((error) => {
-      status.textContent = error instanceof Error ? error.message : "تعذرت مزامنة ملخصات Pro.";
-    }).finally(() => { button.disabled = false; });
-  });
-}
-
 function openUtilityPage(page: string): void {
   const copy: Record<string, { kicker: string; title: string; paragraphs: string[] }> = {
     privacy: { kicker: "الخصوصية", title: "الملف يبقى حيث وضعته.", paragraphs: ["يعالج كاشف HTML وCSS في المتصفح المحلي. لا يرسل المصدر إلى خادم في مسار الفحص الأساسي، ولا ينشئ حسابات أو يضيف أدوات تحليلات في هذه النسخة.", "إذا استخدمت فحص URL، يرسل المتصفح طلب قراءة عادي إلى الرابط الذي اخترته أنت. النتيجة تعتمد على CORS؛ لا نتجاوز إعدادات الموقع المستهدف."] },
@@ -359,30 +311,6 @@ function bindLandingEvents(): void {
   });
   document.querySelector<HTMLButtonElement>("#run-audit")?.addEventListener("click", () => { void runAudit(); });
   document.querySelectorAll<HTMLButtonElement>(".article-card").forEach((button) => button.addEventListener("click", () => openArticle(button.dataset.article ?? "")));
-  bindProAccess();
-}
-
-function bindProAccess(): void {
-  const form = document.querySelector<HTMLFormElement>("#pro-access-form");
-  const status = document.querySelector<HTMLElement>("#pro-access-status");
-  form?.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const input = document.querySelector<HTMLInputElement>("#pro-license");
-    const button = form.querySelector<HTMLButtonElement>("button");
-    const licenseKey = input?.value.trim() ?? "";
-    if (!licenseKey || !status || !button) return;
-    button.disabled = true;
-    status.textContent = "نتحقق من الاشتراك عبر المسار الخاص…";
-    void requestProSession(licenseKey)
-      .then(() => {
-        if (input) input.value = "";
-        status.textContent = "تم التحقق من وصول Pro على هذا الجهاز. تنتهي الجلسة تلقائياً ولا يُحفظ المفتاح.";
-        renderLanding();
-      })
-      .catch((error) => { status.textContent = error instanceof Error ? error.message : "تعذر التحقق من الوصول."; })
-      .finally(() => { button.disabled = false; });
-  });
-  document.querySelector<HTMLButtonElement>("#clear-pro-session")?.addEventListener("click", () => { clearProSession(); renderLanding(); });
 }
 
 async function runAudit(): Promise<void> {
@@ -428,8 +356,7 @@ function route(): void {
   const card = parseShareCard(hash);
   if (card) renderShareCard(card);
   else if (hash === "en") renderEnglishPage();
-  else if (hash === "pro") { renderLanding(); window.setTimeout(() => document.querySelector("#pro")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0); }
-  else if (hash === "pro-workspace") renderProWorkspace();
+  else if (hash === "pro" || hash === "pro-workspace" || hash === "readiness") { renderLanding(); window.setTimeout(() => document.querySelector("#readiness")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0); }
   else if (hash.startsWith("guide/")) openArticle(hash.split("/")[1]);
   else if (["privacy", "terms", "methodology", "contact"].includes(hash)) openUtilityPage(hash);
   else { document.documentElement.lang = "ar"; document.documentElement.dir = "rtl"; renderLanding(); }
