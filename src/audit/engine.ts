@@ -4,9 +4,10 @@ import { arabicRules } from "../rules/arabic";
 import { seoRules } from "../rules/seo";
 import { structureRules } from "../rules/structure";
 import { qualityRules } from "../rules/quality";
+import { extendedRules } from "../rules/extended";
 
-export const rulePack: AuditRule[] = [...arabicRules, ...seoRules, ...structureRules, ...qualityRules];
-export const RULE_PACK_VERSION = "0.4.0";
+export const rulePack: AuditRule[] = [...arabicRules, ...seoRules, ...structureRules, ...qualityRules, ...extendedRules];
+export const RULE_PACK_VERSION = "0.5.0";
 
 function calculateIndex(findings: Finding[]): number {
   const deduction = findings.reduce((total, finding) => total + ({ error: 14, warning: 6, info: 2 }[finding.severity]), 0);

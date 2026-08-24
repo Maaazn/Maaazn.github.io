@@ -58,7 +58,7 @@ describe("KashifWeb Arabic rule pack", () => {
     const html = `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>متجر محلي</title><script type="application/ld+json">{"@context":"https://schema.org","@type":"LocalBusiness","name":"متجر مثال"}</script></head><body><h1>متجر مثال</h1></body></html>`;
     const report = auditHtml(html);
     expect(report.findings.map((finding) => finding.id)).toContain("seo.local-business-basics");
-    expect(report.rulePackVersion).toBe("0.4.0");
+    expect(report.rulePackVersion).toBe("0.5.0");
     expect(report.analysisDurationMs).toBeGreaterThanOrEqual(0);
   });
 });
