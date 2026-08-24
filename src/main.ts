@@ -9,7 +9,10 @@ import { buildActionPlan } from "./audit/action-plan";
 import type { AuditReport, Finding, FindingCategory } from "./audit/types";
 import { articles } from "./content/articles";
 import { createShareCardUrl, parseShareCard, type ShareCardPayload } from "./report/card";
-import { saveReport } from "./pro/workspace";
+import { buildWorkspaceInsight } from "./pro/insights";
+import { clearProSession, currentProSession, requestProSession } from "./pro/entitlement";
+import { syncWorkspace } from "./pro/sync";
+import { compareReports, listSavedReports, saveReport } from "./pro/workspace";
 
 const SAMPLE_HTML = `<!doctype html>
 <html>
@@ -29,6 +32,8 @@ let currentReport: AuditReport | null = null;
 let currentMode: "html" | "url" = "html";
 let auditRunId = 0;
 const MAX_SOURCE_BYTES = 3 * 1024 * 1024;
+const PRO_PURCHASE_URL = "https://ghhhyyy.gumroad.com/l/iamkd?wanted=true";
+let proSession = currentProSession();
 
 function escapeHtml(value: string): string {
   return value.replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#039;", '"': "&quot;" })[character] ?? character);
@@ -49,16 +54,85 @@ function introTemplate(): string {
         <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663375486418/GnWCwyewMCIwZAWj.png" alt="" width="46" height="46" />
         <span><b>كاشِف</b><em>KashifWeb</em></span>
       </a>
-      <nav aria-label="التنقل الرئيسي">
-        <a href="#tool">الأداة</a>
-        <a href="#readiness">جاهزية النشر</a>
-        <a href="#method">المنهجية</a>
+	      <nav aria-label="التنقل الرئيسي">
+	        <a href="#tool">الأداة</a>
+	        <a href="#readiness">جاهزية النشر</a>
+	        <a href="#pro">Pro</a>
+	        <a href="#method">المنهجية</a>
         <a href="#guides">الأدلة</a>
         <a href="#about">عن كاشف</a>
       </nav>
       <div class="header-actions"><a class="language-link" href="#en" lang="en" dir="ltr">English</a><a class="header-note" href="#privacy">محلي الخصوصية <span aria-hidden="true">↙</span></a></div>
     </header>
   `;
+}
+
+function proWorkspaceTemplate(): string {
+  const saved = listSavedReports();
+  const insight = buildWorkspaceInsight(saved);
+  const active = Boolean(proSession);
+  return `
+    <section id="pro" class="pro-section pro-workspace-section" aria-labelledby="pro-title">
+      <div class="pro-mark" aria-hidden="true">P/02</div>
+      <div class="pro-copy">
+        <p class="eyebrow"><span></span> مساحة Pro — تاريخ، مقارنة، مزامنة</p>
+        <h2 id="pro-title">لا تراجع النتيجة وحدها.<br />راجع <i>اتجاهها</i>.</h2>
+        <p>Pro يبني فوق التقارير التي حفظتها: يقارن اللقطات، يوضح ما حُلّ وما ظهر، ويزامن ملخصات الأدلة فقط بين جلساتك. لا يرفع HTML أو CSS أو مفتاح Gumroad.</p>
+        <div class="pro-feature-list"><span>مقارنة قبل/بعد</span><span>سجل محلي حتى 18 تقريراً</span><span>مزامنة 30 ملخصاً</span><span>تصدير وخطة إصلاح</span></div>
+      </div>
+      <div class="pro-status" id="pro-workspace-panel">
+        <p class="status-label">${active ? "وصول Pro نشط" : "ابدأ من تقريرك الأول"}</p>
+        <strong>${insight.savedCount ? `${insight.savedCount} تقرير محفوظ` : "لا توجد لقطة محفوظة بعد."}</strong>
+        <p>${insight.latestLabel ? `أحدث لقطة: ${escapeHtml(insight.latestLabel)} · المؤشر ${insight.latestIndex}` : "احفظ تقريراً من نتيجة الفحص لتنشئ خط أساس للمقارنة."}</p>
+        ${insight.delta ? `<ul class="pro-delta"><li><b>${insight.delta.resolved}</b> إشارة حُلّت</li><li><b>${insight.delta.introduced}</b> إشارة جديدة</li><li><b>${insight.delta.persistent}</b> إشارة مستمرة</li></ul>` : ""}
+        ${active ? `
+          ${proHistoryTemplate()}
+          <button id="pro-sync" class="button primary">زامن ملخصات مساحة العمل <span aria-hidden="true">↻</span></button>
+          <button id="pro-signout" class="text-button">إنهاء جلسة Pro على هذا الجهاز</button>
+        ` : `
+          <a class="button primary" href="${PRO_PURCHASE_URL}" target="_blank" rel="noreferrer">افتح ترخيص Pro <span aria-hidden="true">↗</span></a>
+          <form class="pro-access-form" id="pro-access-form">
+            <label for="pro-license-key">لديك ترخيص بالفعل؟</label>
+            <div><input id="pro-license-key" type="password" autocomplete="off" placeholder="ألصق مفتاح Gumroad هنا" /><button class="button" type="submit">فعّل Pro</button></div>
+            <p>يتحقق المفتاح عبر المزود ثم نحفظ جلسة قصيرة على هذا الجهاز فقط. لا يُحفظ المفتاح داخل المتصفح.</p>
+          </form>
+        `}
+        <p id="pro-status" class="pro-runtime-status"></p>
+      </div>
+    </section>
+  `;
+}
+
+function reportOptionLabel(label: string, savedAt: string, index: number): string {
+  const date = new Intl.DateTimeFormat("ar-SA", { dateStyle: "short" }).format(new Date(savedAt));
+  return `${label} · ${date} · ${index}`;
+}
+
+function findingChangeList(ids: string[], reports: ReturnType<typeof listSavedReports>): string {
+  if (!ids.length) return `<p class="pro-change-empty">لا توجد نتائج ضمن هذه الفئة بين اللقطتين.</p>`;
+  const titles = new Map(reports.flatMap((item) => item.report.findings.map((finding) => [finding.id, finding.title])));
+  return `<ul>${ids.slice(0, 5).map((id) => `<li><b>${escapeHtml(id)}</b><span>${escapeHtml(titles.get(id) ?? "إشارة من حزمة القواعد")}</span></li>`).join("")}${ids.length > 5 ? `<li><span>و${ids.length - 5} إشارات إضافية.</span></li>` : ""}</ul>`;
+}
+
+function comparisonResultTemplate(baselineId: string, currentId: string): string {
+  const saved = listSavedReports();
+  const baseline = saved.find((item) => item.id === baselineId);
+  const current = saved.find((item) => item.id === currentId);
+  if (!baseline || !current || baseline.id === current.id) return `<p class="pro-change-empty">اختر لقطتين مختلفتين لقراءة التغيّر بينهما.</p>`;
+  const delta = compareReports(baseline.report, current.report);
+  return `<div class="pro-change-columns"><article><p><b>${delta.resolvedFindings.length}</b> حُلّت</p>${findingChangeList(delta.resolvedFindings, saved)}</article><article><p><b>${delta.newFindings.length}</b> ظهرت</p>${findingChangeList(delta.newFindings, saved)}</article><article><p><b>${delta.persistentFindings.length}</b> مستمرة</p>${findingChangeList(delta.persistentFindings, saved)}</article></div>`;
+}
+
+function proHistoryTemplate(): string {
+  const saved = listSavedReports();
+  if (!saved.length) return `<p class="pro-unlocked-note">فعّل الوصول الآن، ثم احفظ تقريراً محلياً لتبدأ مساحة التاريخ.</p>`;
+  const latest = saved[0];
+  const baseline = saved[1] ?? latest;
+  return `<div class="pro-history" aria-label="مقارنة التقارير المحفوظة">
+    <p class="pro-unlocked-note">مساحة Pro نشطة على هذا الجهاز. قارن ملخصات اللقطات المحفوظة محلياً قبل مزامنتها اختيارياً.</p>
+    ${saved.length > 1 ? `<div class="pro-compare-controls"><label for="pro-baseline">خط الأساس<select id="pro-baseline">${saved.map((item) => `<option value="${item.id}"${item.id === baseline.id ? " selected" : ""}>${escapeHtml(reportOptionLabel(item.label, item.savedAt, item.report.initialIndex))}</option>`).join("")}</select></label><label for="pro-current">اللقطة اللاحقة<select id="pro-current">${saved.map((item) => `<option value="${item.id}"${item.id === latest.id ? " selected" : ""}>${escapeHtml(reportOptionLabel(item.label, item.savedAt, item.report.initialIndex))}</option>`).join("")}</select></label><button id="pro-compare" class="button" type="button">قارن اللقطتين</button></div><div id="pro-comparison-result" class="pro-comparison-result">${comparisonResultTemplate(baseline.id, latest.id)}</div>` : `<p class="pro-unlocked-note">لديك لقطة واحدة. احفظ تقريراً ثانياً بعد تعديل المصدر لتظهر المقارنة التفصيلية هنا.</p>`}
+    <ol class="pro-history-list">${saved.slice(0, 5).map((item) => `<li><span>${escapeHtml(item.label)}</span><b>${item.report.initialIndex}</b><small>${new Intl.DateTimeFormat("ar-SA", { dateStyle: "medium" }).format(new Date(item.savedAt))}</small></li>`).join("")}</ol>
+  </div>`;
 }
 
 function renderLanding(): void {
@@ -177,9 +251,10 @@ function renderLanding(): void {
           <strong>لا تطلب مراجعة قبل اكتمال الصفحة.</strong>
           <p>استخدم هذا التسلسل كقائمة عمل، وليس كضمان من أي منصة خارجية.</p>
           <ul><li>قدّم محتوى أصلياً يشرح مشكلة أو قراراً تقنياً مفيداً.</li><li>اختبر التنقل والقراءة على الهاتف وسطح المكتب.</li><li>أضف الخصوصية والشروط والتواصل، ثم راجع الدليل داخل التقرير.</li></ul>
-          <p class="pro-price">الفحص المحلي ومساحة مقارنة التقارير متاحان في النسخة الحالية من دون شراء أو حساب.</p>
+	          <p class="pro-price">الفحص المحلي وحفظ اللقطات وخطة الإصلاح متاحان بلا حساب. Pro يضيف المقارنة المرئية بين اللقطات والمزامنة الاختيارية لملخصاتها.</p>
         </div>
       </section>
+      ${proWorkspaceTemplate()}
     </main>
     <footer class="site-footer"><span>كاشِف / KashifWeb</span><span>مصدر محلي. نتائج قابلة للمراجعة.</span><span>© 2026</span></footer>
   `;
@@ -219,7 +294,8 @@ function saveCurrentReportToWorkspace(report: AuditReport): void {
   const label = report.sourceLabel === "مصدر HTML محلي" ? `مراجعة محلية — ${new Intl.DateTimeFormat("ar-SA", { dateStyle: "short", timeStyle: "short" }).format(new Date())}` : report.sourceLabel;
   try {
     saveReport(report, label);
-    if (status) status.textContent = "حُفظ ملخص التقرير محلياً في مساحة العمل. لا يُحفظ HTML أو CSS الذي فُحص.";
+    const savedCount = listSavedReports().length;
+    if (status) status.textContent = savedCount > 1 ? "حُفظت اللقطة الثانية. أصبح فرق النتائج جاهزاً في مساحة Pro؛ لا يُحفظ HTML أو CSS الذي فُحص." : "حُفظ ملخص التقرير محلياً في مساحة العمل. احفظ لقطة ثانية بعد التعديل لتنشئ فرقاً قابلاً للمقارنة؛ لا يُحفظ HTML أو CSS.";
   } catch (error) {
     if (status) status.textContent = error instanceof Error ? error.message : "تعذر حفظ التقرير محلياً.";
   }
@@ -279,7 +355,7 @@ function renderEnglishPage(): void {
     <section class="english-principles"><div><span>01</span><h2>Local by default</h2><p>Paste source or choose a file. Analysis happens in your browser. URL mode reads only what the target deliberately makes available through CORS.</p></div><div><span>02</span><h2>Rules, not theatre</h2><p>Each finding includes a detected signal, a reason, an actionable repair path, and an explicit boundary. The local index is never presented as an external ranking.</p></div><div><span>03</span><h2>Arabic-aware engineering</h2><p>Direction, language declaration, bidi context, logical CSS, form direction, Arabic locale metadata, and local-business data are reviewed alongside essential page structure.</p></div></section>
     <section class="english-workflow"><div><p class="eyebrow"><span></span> How the review works</p><h2>A short path from source<br />to an informed next step.</h2></div><ol><li><b>Bring a source</b><span>Choose an HTML file, paste source, and optionally include separate CSS.</span></li><li><b>Read the evidence</b><span>Review findings grouped by Arabic/RTL, metadata, and document structure.</span></li><li><b>Export intentionally</b><span>Download JSON, print the local report, or share a compact card that excludes inspected HTML and CSS.</span></li></ol></section>
     <section class="english-boundary"><h2>What KashifWeb does not claim.</h2><p>It is not a crawler, a WCAG certification, a security audit, a search-ranking predictor, or a substitute for testing the rendered page in target browsers. It does not execute inspected-page scripts, bypass CORS, or collect source code in its primary flow.</p></section>
-    <section class="english-pro"><p class="eyebrow"><span></span> Pro workspace — in preparation</p><h2>Paid work must deliver a real workflow.</h2><p>KashifWeb Pro is being prepared as a private workspace for saved review projects, baseline comparison and repeatable Arabic-first rule profiles. The free local audit remains available without an account. No checkout is live until the Pro workflow and delivery path are tested.</p><a class="button plain" href="#pro">Read the Arabic Pro outline <span aria-hidden="true">→</span></a></section>
+    <section class="english-pro"><p class="eyebrow"><span></span> Pro workspace — licensed access</p><h2>Paid work should make progress traceable.</h2><p>KashifWeb Pro adds saved-snapshot comparison, a local review timeline, and optional source-free summary sync to the free local audit. A short session is issued after entitlement verification; inspected HTML, CSS, and the license key are not stored in report history. This version does not claim live crawling, rendered-page analysis, or ranking guarantees.</p><a class="button plain" href="#pro">Open the Arabic Pro workspace <span aria-hidden="true">→</span></a></section>
   </main><footer class="site-footer"><span>KashifWeb / كاشِف</span><span>Local source. Reviewable evidence.</span><span>© 2026</span></footer>`;
 }
 
@@ -322,6 +398,47 @@ function bindLandingEvents(): void {
   });
   document.querySelector<HTMLButtonElement>("#run-audit")?.addEventListener("click", () => { void runAudit(); });
   document.querySelectorAll<HTMLButtonElement>(".article-card").forEach((button) => button.addEventListener("click", () => openArticle(button.dataset.article ?? "")));
+  document.querySelector<HTMLFormElement>("#pro-access-form")?.addEventListener("submit", (event) => { event.preventDefault(); void activatePro(); });
+  document.querySelector<HTMLButtonElement>("#pro-sync")?.addEventListener("click", () => { void syncProWorkspace(); });
+  document.querySelector<HTMLButtonElement>("#pro-signout")?.addEventListener("click", () => { clearProSession(); proSession = null; renderLanding(); document.querySelector("#pro")?.scrollIntoView({ block: "start" }); });
+  document.querySelector<HTMLButtonElement>("#pro-compare")?.addEventListener("click", () => {
+    const baseline = document.querySelector<HTMLSelectElement>("#pro-baseline")?.value ?? "";
+    const current = document.querySelector<HTMLSelectElement>("#pro-current")?.value ?? "";
+    const output = document.querySelector<HTMLElement>("#pro-comparison-result");
+    if (output) output.innerHTML = comparisonResultTemplate(baseline, current);
+  });
+}
+
+function setProStatus(message: string): void {
+  const status = document.querySelector<HTMLElement>("#pro-status");
+  if (status) status.textContent = message;
+}
+
+async function activatePro(): Promise<void> {
+  const input = document.querySelector<HTMLInputElement>("#pro-license-key");
+  const key = input?.value.trim() ?? "";
+  if (!key) { setProStatus("ألصق مفتاح Gumroad لتفعيل الوصول."); return; }
+  setProStatus("نتحقق من الترخيص عبر مزود Pro…");
+  try {
+    proSession = await requestProSession(key);
+    if (input) input.value = "";
+    renderLanding();
+    document.querySelector("#pro")?.scrollIntoView({ block: "start" });
+  } catch (error) {
+    setProStatus(error instanceof Error ? error.message : "تعذر تفعيل وصول Pro.");
+  }
+}
+
+async function syncProWorkspace(): Promise<void> {
+  const saved = listSavedReports();
+  if (!saved.length) { setProStatus("احفظ تقريراً واحداً على الأقل قبل مزامنة مساحة العمل."); return; }
+  setProStatus("نزامن ملخصات التقارير فقط…");
+  try {
+    const remote = await syncWorkspace(saved);
+    setProStatus(`اكتملت مزامنة ${remote.length} ملخصاً. بقي HTML وCSS على جهازك.`);
+  } catch (error) {
+    setProStatus(error instanceof Error ? error.message : "تعذرت مزامنة مساحة Pro.");
+  }
 }
 
 async function runAudit(): Promise<void> {
@@ -367,7 +484,7 @@ function route(): void {
   const card = parseShareCard(hash);
   if (card) renderShareCard(card);
   else if (hash === "en") renderEnglishPage();
-  else if (hash === "pro" || hash === "pro-workspace" || hash === "readiness") { renderLanding(); window.setTimeout(() => document.querySelector("#readiness")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0); }
+	  else if (["pro", "pro-workspace", "readiness"].includes(hash)) { renderLanding(); window.setTimeout(() => document.querySelector(hash === "readiness" ? "#readiness" : "#pro")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0); }
   else if (hash.startsWith("guide/")) openArticle(hash.split("/")[1]);
   else if (["privacy", "terms", "methodology", "contact"].includes(hash)) openUtilityPage(hash);
   else { document.documentElement.lang = "ar"; document.documentElement.dir = "rtl"; renderLanding(); }
