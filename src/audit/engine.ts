@@ -3,9 +3,10 @@ import { hasArabicText, type AuditRule } from "../rules/types";
 import { arabicRules } from "../rules/arabic";
 import { seoRules } from "../rules/seo";
 import { structureRules } from "../rules/structure";
+import { qualityRules } from "../rules/quality";
 
-export const rulePack: AuditRule[] = [...arabicRules, ...seoRules, ...structureRules];
-export const RULE_PACK_VERSION = "0.3.0";
+export const rulePack: AuditRule[] = [...arabicRules, ...seoRules, ...structureRules, ...qualityRules];
+export const RULE_PACK_VERSION = "0.4.0";
 
 function calculateIndex(findings: Finding[]): number {
   const deduction = findings.reduce((total, finding) => total + ({ error: 14, warning: 6, info: 2 }[finding.severity]), 0);

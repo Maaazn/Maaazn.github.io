@@ -4,7 +4,8 @@ import "./share.css";
 import "./launch.css";
 import "./pro-access.css";
 import "./pro-sync.css";
-import { auditHtml } from "./audit/engine";
+import { auditHtml, rulePack } from "./audit/engine";
+import { buildActionPlan } from "./audit/action-plan";
 import type { AuditReport, Finding, FindingCategory } from "./audit/types";
 import { articles } from "./content/articles";
 import { createShareCardUrl, parseShareCard, type ShareCardPayload } from "./report/card";
@@ -38,7 +39,7 @@ function severityLabel(severity: Finding["severity"]): string {
 }
 
 function categoryLabel(category: FindingCategory): string {
-  return ({ rtl: "العربية وRTL", seo: "SEO والبيانات", structure: "بنية وإتاحة" })[category];
+  return ({ rtl: "العربية وRTL", seo: "SEO والبيانات", structure: "بنية الصفحة", accessibility: "الإتاحة", performance: "الأداء" })[category];
 }
 
 function introTemplate(): string {
@@ -75,7 +76,7 @@ function renderLanding(): void {
           </div>
           <dl class="hero-facts">
             <div><dt>0</dt><dd>ملفات مرفوعة لخادم</dd></div>
-            <div><dt>3</dt><dd>طرق إدخال محلية</dd></div>
+            <div><dt>${rulePack.length}</dt><dd>قواعد معلنة</dd></div>
             <div><dt>1</dt><dd>تقرير مفهوم لك وللفريق</dd></div>
           </dl>
         </div>
@@ -190,7 +191,7 @@ function renderReport(report: AuditReport): void {
   const empty = document.querySelector<HTMLElement>("#report-empty");
   if (!output || !empty) return;
   empty.classList.add("hidden");
-  const grouped = (["rtl", "seo", "structure"] as FindingCategory[]).map((category) => ({ category, items: report.findings.filter((finding) => finding.category === category) }));
+  const grouped = (["rtl", "seo", "structure", "accessibility", "performance"] as FindingCategory[]).map((category) => ({ category, items: report.findings.filter((finding) => finding.category === category) }));
   const errors = report.findings.filter((finding) => finding.severity === "error").length;
   const warnings = report.findings.filter((finding) => finding.severity === "warning").length;
   output.innerHTML = `
@@ -198,7 +199,7 @@ function renderReport(report: AuditReport): void {
       <div><p class="eyebrow">تقرير محلي — ${escapeHtml(report.sourceLabel)}</p><h2>دليل الصفحة،<br />مرتب حسب الأولوية.</h2><p class="report-timestamp">أُنشئ في ${new Intl.DateTimeFormat("ar-SA", { dateStyle: "medium", timeStyle: "short" }).format(new Date(report.generatedAt))} · حزمة القواعد ${report.rulePackVersion} · ${report.analysisDurationMs}ms محلياً</p></div>
       <div class="index-panel"><span>مؤشر مبدئي</span><strong>${report.initialIndex}</strong><small>ليس تصنيفاً خارجياً</small></div>
     </div>
-    <div class="report-summary"><span><b>${errors}</b> تتطلب معالجة</span><span><b>${warnings}</b> تحسينات مقترحة</span><span><b>${report.findings.length}</b> إشارة مرصودة</span><button id="download-report">صدّر JSON <span>↓</span></button><button id="print-report" class="secondary-action">اطبع التقرير <span>↙</span></button><button id="copy-share-card" class="secondary-action">انسخ بطاقة ملخص <span>↗</span></button><button id="save-workspace" class="secondary-action">احفظ للمقارنة <span>＋</span></button></div>
+    <div class="report-summary"><span><b>${errors}</b> تتطلب معالجة</span><span><b>${warnings}</b> تحسينات مقترحة</span><span><b>${report.findings.length}</b> إشارة مرصودة</span><button id="download-action-plan">نزّل خطة إصلاح <span>↓</span></button><button id="download-report">صدّر JSON <span>↓</span></button><button id="print-report" class="secondary-action">اطبع التقرير <span>↙</span></button><button id="copy-share-card" class="secondary-action">انسخ بطاقة ملخص <span>↗</span></button><button id="save-workspace" class="secondary-action">احفظ للمقارنة <span>＋</span></button></div>
     <div class="findings-groups">${grouped.map(({ category, items }) => `
       <section class="finding-group"><div class="group-title"><span>${categoryLabel(category)}</span><b>${String(items.length).padStart(2, "0")}</b></div>
         ${items.length ? items.map((finding) => findingTemplate(finding)).join("") : `<p class="group-clear">لم يرصد كاشف قاعدة من هذه الفئة في المصدر المقدم.</p>`}
@@ -206,6 +207,7 @@ function renderReport(report: AuditReport): void {
     `).join("")}</div>
     <aside class="limits"><b>حدود هذا التقرير</b><ul>${report.limitations.map((limitation) => `<li>${escapeHtml(limitation)}</li>`).join("")}</ul></aside>
   `;
+  document.querySelector<HTMLButtonElement>("#download-action-plan")?.addEventListener("click", () => downloadActionPlan(report));
   document.querySelector<HTMLButtonElement>("#download-report")?.addEventListener("click", () => downloadReport(report));
   document.querySelector<HTMLButtonElement>("#print-report")?.addEventListener("click", () => window.print());
   document.querySelector<HTMLButtonElement>("#copy-share-card")?.addEventListener("click", () => { void copyShareCard(report); });
@@ -232,6 +234,15 @@ function downloadReport(report: AuditReport): void {
   const anchor = document.createElement("a");
   anchor.href = URL.createObjectURL(blob);
   anchor.download = "kashifweb-report.json";
+  anchor.click();
+  URL.revokeObjectURL(anchor.href);
+}
+
+function downloadActionPlan(report: AuditReport): void {
+  const blob = new Blob([buildActionPlan(report)], { type: "text/markdown;charset=utf-8" });
+  const anchor = document.createElement("a");
+  anchor.href = URL.createObjectURL(blob);
+  anchor.download = "kashifweb-action-plan.md";
   anchor.click();
   URL.revokeObjectURL(anchor.href);
 }
