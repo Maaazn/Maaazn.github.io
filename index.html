@@ -17,13 +17,54 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <style>
+      /* محتوى ناشر ثابت يظهر قبل تهيئة التطبيق أو عند تعذر JavaScript. */
+      .publisher-fallback { max-width: 860px; margin: 0 auto; padding: 48px 24px 72px; color: #12304a; background: #fbfaf3; font: 400 18px/1.9 "IBM Plex Sans Arabic", system-ui, sans-serif; }
+      .publisher-fallback__eyebrow { color: #8a5b16; font: 600 14px/1.5 "IBM Plex Mono", monospace; letter-spacing: .03em; }
+      .publisher-fallback h1 { margin: 8px 0 16px; font-size: clamp(32px, 7vw, 56px); line-height: 1.2; }
+      .publisher-fallback h2 { margin: 42px 0 10px; font-size: 26px; line-height: 1.35; }
+      .publisher-fallback p, .publisher-fallback li { max-width: 72ch; }
+      .publisher-fallback__note { padding: 18px 20px; border-right: 4px solid #b57620; background: #f4ecdc; }
+      .publisher-fallback a { color: #124d76; font-weight: 600; }
+      @media (prefers-color-scheme: dark) { .publisher-fallback { color: #eef4f4; background: #102b43; } .publisher-fallback__note { background: #193d58; } .publisher-fallback a { color: #a9d9f7; } }
+    </style>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4205997252018362"
      crossorigin="anonymous"></script>
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"KashifWeb","applicationCategory":"DeveloperApplication","operatingSystem":"Web","inLanguage":["ar","en"],"description":"A privacy-first local source review workspace for Arabic/RTL, metadata, and page structure."}</script>
     <title>كاشف — افهم صفحة الويب قبل أن تنشرها</title>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <main class="publisher-fallback" aria-label="تعريف كاشف ومنهجيته">
+        <p class="publisher-fallback__eyebrow">كاشِف / KashifWeb — مراجعة مصدر محلية</p>
+        <h1>افهم صفحة الويب قبل أن تنشرها.</h1>
+        <p>كاشف أداة مراجعة تعمل داخل المتصفح. تقرأ HTML وCSS اللذين تختارهما على جهازك، ثم تعرض أدلة قابلة للمراجعة حول العربية وRTL والبيانات الوصفية وبنية الصفحة والإتاحة الأساسية. لا نطلب حساباً، ولا نرفع الكود الذي تلصقه إلى خادم كاشف.</p>
+
+        <h2>ما الذي نراجعه فعلاً؟</h2>
+        <p>نبحث في المصدر عن إشارات محددة، مثل لغة المستند واتجاهه، عنوان الصفحة ووصفها وcanonical وviewport، تسلسل العناوين، بدائل الصور، أسماء الحقول، وبعض أنماط CSS التي قد تربك النص العربي. كل نتيجة تربط قاعدة بدليل وسبب وخطوة مراجعة، بدلاً من إعطاء رقم مجرد أو وعد عن ترتيب البحث.</p>
+
+        <h2>كيف تستخدم التقرير؟</h2>
+        <ol>
+          <li>الصق HTML أو حمّل ملف الصفحة الذي تريد مراجعته.</li>
+          <li>أضف CSS منفصلاً عندما تريد مراجعة إشارات الاتجاه والخصائص المنطقية.</li>
+          <li>راجع الدليل والاقتراح، ثم أصلح المصدر واختبر الصفحة المنشورة على الهاتف وسطح المكتب.</li>
+          <li>احفظ تقريراً محلياً أو صدّر خطة إصلاح Markdown لتوثيق ما تغير.</li>
+        </ol>
+
+        <h2>حدود لا نخفيها</h2>
+        <p class="publisher-fallback__note">كاشف لا ينفذ JavaScript الخاص بالصفحة التي تراجعها، ولا يتجاوز CORS، ولا يزحف الويب، ولا يقيس Core Web Vitals، ولا يضمن SEO أو قبول إعلان أو امتثالاً قانونياً. النتيجة دليل أولي يساعدك على بدء المراجعة، وليست شهادة خارجية.</p>
+
+        <h2>محتوى للمطور قبل أي درجة</h2>
+        <p>الصفحة العربية المفيدة لا تكتفي بـ<code>lang="ar"</code>: اتجاه النص، ترتيب العناوين، النصوص البديلة، التحكم بالتركيز، وخصائص CSS المنطقية كلها تؤثر في قابلية القراءة والمراجعة. كما أن وجود عنوان لا يثبت أنه مناسب؛ لذلك يميز كاشف بين غياب الإشارة وبين إشارة تحتاج قراراً تحريرياً من صاحب الصفحة.</p>
+        <p>عندما يتعذر فحص رابط عام، فهذا لا يعني بالضرورة أن الموقع متوقف. غالباً تمنع سياسة CORS المتصفح من قراءة الاستجابة. لهذا يبقى إدخال المصدر أو الملف المسار الأكثر موثوقية في هذه الأداة المحلية.</p>
+
+        <h2>الخصوصية والمنهجية</h2>
+        <p>ستجد داخل التطبيق <a href="#methodology">المنهجية الكاملة</a> و<a href="#privacy">سياسة الخصوصية</a> و<a href="#terms">الشروط</a> و<a href="#contact">التواصل</a>. بعد تحميل التطبيق، تظهر غرفة المراجعة والأدلة الأصلية وخطة الإصلاح ومساحة المقارنة الاختيارية بوضوح.</p>
+
+        <h2>عن الناشر</h2>
+        <p>ينشر Maaazn كاشف كمشروع مستقل للمطورين ومالكي المواقع الذين يريدون مراجعة مصدر الصفحة قبل نشره. هدف المشروع هو توضيح ما يمكن استنتاجه من المصدر وما لا يمكنه إثباته، وليس دفع المستخدم إلى شراء أو ادعاء قبول من أي منصة خارجية. للتواصل أو الإبلاغ عن خطأ في قاعدة، استخدم رابط التواصل داخل التطبيق.</p>
+      </main>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
